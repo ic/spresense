@@ -116,7 +116,33 @@ win_install_tools()
 
 mac_install_tools()
 {
-    :  # do nothing
+    # TODO Support for MacPorts (unable to reinstall for testing)
+    which brew
+    if [[ $? != 0 ]]
+    then
+        read "Package management done with Homebrew, and not found. Would you like to install it? [y/N]" brew_install
+        if [[ "$brew_install" = "y" ]]
+        then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        else
+            echo "Cannot continue without Homebrew"
+            exit 1
+        fi
+    fi
+    brew install \
+        gcc \
+        gperf \
+        ncurses \
+        virtualenv
+    if [[ "$(uname -m)" = "x86_64" ]]
+    then
+        virtualenv $SPRROOT/venv
+        source $SPRROOT/venv/bin/activate
+        pip install kconfiglib==14.1.0 pyserial==3.5 xmodem==0.4.7
+    else
+        # Assuming arm64---no machine available, no do nothing
+        :
+    fi
 }
 
 wsl_install_tools()
@@ -414,5 +440,10 @@ mkdir -p ${HOME}/${SPRBASENAME}
 echo "#!/usr/bin/env bash" > ${_setup}
 echo "PATH=${SPRROOT}/usr/bin:"'${PATH}' >> ${_setup}
 echo "export PATH" >> ${_setup}
+
+if [[ "${OS}" == "mac" ]]
+then
+    echo "source $SPRROOT/venv/bin/activate" >> ${_setup}
+fi
 
 echo "Installation is done."
